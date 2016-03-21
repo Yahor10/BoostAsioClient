@@ -5,9 +5,14 @@
 #include "client.h"
 #include "payload/payload.h"
 
-client::client(std::string host, int port, boost::asio::io_service & io_service):_socket(io_service),_endpoint(boost::asio::ip::address::from_string(host),port) {
+using boost::asio::placeholders::bytes_transferred;
+using boost::asio::placeholders::error;
+using boost::asio::buffer;
+
+client::client(std::string host, int port, boost::asio::io_service & io_service):_socket(io_service),_endpoint(boost::asio::ip::address::from_string(host),port),_answers(64) {
 
     _socket.connect(_endpoint);
+//    startListen();
 
 }
 
@@ -24,9 +29,19 @@ void client::sendMessage(payload & message) {
     const boost::asio::mutable_buffers_1 &buffers = boost::asio::buffer(byteArray,8);
     boost::asio::write(_socket, buffers,
                        boost::asio::transfer_all(), ignored_error);
-
+    printf("start read\n");
+    size_t len = _socket.read_some(boost::asio::buffer(_answers,64));
+    printf("finish read\n %ud",len);
 
 }
+
+void client::startListen() {
+    printf("start listen \n");;
+    boost::asio::async_read(_socket, buffer(_answers),
+                            boost::bind(&client::async_read_handler, this,
+                                        error,bytes_transferred));
+}
+
 
 void client::putLongToArray(unsigned  char *arr,long val,long skip) {
     // convert from an unsigned long int to a 4-byte array
@@ -35,4 +50,9 @@ void client::putLongToArray(unsigned  char *arr,long val,long skip) {
     arr[2 + skip] = (int)((val >> 8) & 0XFF);
     arr[3 + skip] = (int)((val & 0XFF));
 
+}
+
+void client::async_read_handler(const boost::system::error_code &e,std::size_t bytes) {
+    printf("read answer bytes : %ud",bytes);
+    printf("t2");
 }

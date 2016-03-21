@@ -9,6 +9,7 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include "payload/payload.h"
+#include <boost/thread.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -24,12 +25,16 @@ public:
 
     void sendMessage(payload & messag);
 
+    void startListen();
 private:
 
     tcp::socket _socket;
     tcp::endpoint _endpoint;
 
     void putLongToArray(unsigned  char* arr,long val,long skip);
+
+    void async_read_handler(const boost::system::error_code& e,std::size_t bytes);
+    std::vector<char> _answers;
 };
 
 
